@@ -70,4 +70,194 @@ void main() {
       prints('1.0\n2.5\n'),
     );
   });
+
+  test(
+    'regression: map key lookup in typed row loop should not crash BoxString',
+    () {
+      final source = r'''
+      void main() {
+        final taxasRows = [
+          {
+            'numero_venda': 'VD-001',
+            'bandeira': 'VISA',
+            'taxa_valor': 10.0,
+          },
+        ];
+
+        final rows = [
+          {'numero_venda': 'VD-001', 'valor_em_aberto': 100.0},
+        ];
+
+        for (final row in rows) {
+          dynamic taxa;
+          for (final t in taxasRows) {
+            if (row['numero_venda'] == t['numero_venda']) {
+              taxa = t;
+              break;
+            }
+          }
+
+          final abertoRaw = row['valor_em_aberto'];
+          var valorAberto = 0.0;
+          if (abertoRaw is num) {
+            valorAberto = abertoRaw.toDouble();
+          }
+
+          var taxaValor = 0.0;
+          if (taxa != null) {
+            final taxaValorRaw = taxa['taxa_valor'];
+            if (taxaValorRaw is num) {
+              taxaValor = taxaValorRaw.toDouble();
+            }
+
+            row['bandeira'] = taxa['bandeira'] ?? 'N/A';
+          }
+
+          row['valor_liquido'] = valorAberto - taxaValor;
+        }
+
+        print(rows[0]['bandeira']);
+        print(rows[0]['valor_liquido']);
+      }
+      ''';
+
+      final runtime = Compiler().compileWriteAndLoad({
+        'example': {'main.dart': source},
+      });
+
+      expect(
+        () => runtime.executeLib('package:example/main.dart', 'main'),
+        prints('VISA\n90.0\n'),
+      );
+    },
+  );
+
+  test('regression: simple typed row map lookup should keep slot alignment', () {
+    final source = r'''
+      void main() {
+        final rows = [
+          {'valor_em_aberto': 100.0},
+        ];
+
+        for (final row in rows) {
+          final abertoRaw = row['valor_em_aberto'];
+          if (abertoRaw is num) {
+            print(abertoRaw.toDouble());
+          }
+        }
+      }
+    ''';
+
+    final runtime = Compiler().compileWriteAndLoad({
+      'example': {'main.dart': source},
+    });
+
+    expect(
+      () => runtime.executeLib('package:example/main.dart', 'main'),
+      prints('100.0\n'),
+    );
+  });
+
+  test(
+    'regression: nested loop map key comparison should not corrupt index slots',
+    () {
+      final source = r'''
+      void main() {
+        final taxasRows = [
+          {'numero_venda': 'VD-001'},
+        ];
+
+        final rows = [
+          {'numero_venda': 'VD-001'},
+        ];
+
+        for (final row in rows) {
+          for (final t in taxasRows) {
+            if (row['numero_venda'] == t['numero_venda']) {
+              print('ok');
+            }
+          }
+        }
+      }
+      ''';
+
+      final runtime = Compiler().compileWriteAndLoad({
+        'example': {'main.dart': source},
+      });
+
+      expect(
+        () => runtime.executeLib('package:example/main.dart', 'main'),
+        prints('ok\n'),
+      );
+    },
+  );
+
+  test(
+    'regression: nested lookup with dynamic assignment and break keeps slots stable',
+    () {
+      final source = r'''
+      void main() {
+        final taxasRows = [
+          {'numero_venda': 'VD-001', 'taxa_valor': 10.0},
+        ];
+
+        final rows = [
+          {'numero_venda': 'VD-001', 'valor_em_aberto': 100.0},
+        ];
+
+        for (final row in rows) {
+          dynamic taxa;
+          for (final t in taxasRows) {
+            if (row['numero_venda'] == t['numero_venda']) {
+              taxa = t;
+              break;
+            }
+          }
+
+          final abertoRaw = row['valor_em_aberto'];
+          if (abertoRaw is num && taxa != null) {
+            print(abertoRaw.toDouble());
+          }
+        }
+      }
+      ''';
+
+      final runtime = Compiler().compileWriteAndLoad({
+        'example': {'main.dart': source},
+      });
+
+      expect(
+        () => runtime.executeLib('package:example/main.dart', 'main'),
+        prints('100.0\n'),
+      );
+    },
+  );
+
+  test(
+    'regression: missing map key null should short-circuit safely',
+    () {
+      final source = r'''
+      String main() {
+        final json = {'title': 'One Piece Movie 01'};
+
+        final String title;
+        final String? englishTitle = json['title_en'];
+        if (englishTitle != null && englishTitle.isNotEmpty) {
+          title = englishTitle;
+        } else {
+          title = json['title'];
+        }
+
+        return title;
+      }
+      ''';
+
+      final runtime = Compiler().compileWriteAndLoad({
+        'example': {'main.dart': source},
+      });
+
+      final value = runtime.executeLib('package:example/main.dart', 'main');
+      expect((value as dynamic).$value, 'One Piece Movie 01');
+    },
+  );
 }

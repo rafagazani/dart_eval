@@ -37,7 +37,7 @@ StatementInfo macroBranch(
     if (!resolveStateToThen) {
       //_ctx.resolveBranchStateDiscontinuity(_initialState);
     }
-    //_ctx.endAllocScopeQuiet();
+    ctx.endAllocScopeQuiet();
     return -1;
   });
   ctx.labels.add(label);

@@ -685,35 +685,10 @@ class IndexedReference implements Reference {
         );
       }
 
-      final map = _variable.unboxIfNeeded(ctx);
-      if (_variable.type.specifiedTypeArgs.isEmpty) {
-        _index = _index.updated(ctx);
-      } else {
-        _index = _variable.type.specifiedTypeArgs[0].boxed
-            ? _index.boxIfNeeded(ctx, source)
-            : _index.unboxIfNeeded(ctx);
-      }
-      ctx.pushOp(
-        IndexMap.make(map.scopeFrameOffset, _index.scopeFrameOffset),
-        IndexMap.LEN,
-      );
-
-      final mapResult = Variable.alloc(
-        ctx,
-        _variable.type.specifiedTypeArgs.length < 2
-            ? CoreTypes.dynamic.ref(ctx)
-            : _variable.type.specifiedTypeArgs[1],
-      );
-
-      if (_variable.type.specifiedTypeArgs.isEmpty ||
-          _variable.type.specifiedTypeArgs[1].boxed) {
-        ctx.pushOp(
-          MaybeBoxNull.make(mapResult.scopeFrameOffset),
-          MaybeBoxNull.LEN,
-        );
-      }
-
-      return mapResult;
+      final result = _variable.invoke(ctx, '[]', [_index]);
+      _variable = result.target!;
+      _index = result.args[0];
+      return result.result;
     }
 
     final result = _variable.invoke(ctx, '[]', [_index]);

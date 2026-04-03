@@ -169,15 +169,23 @@ class CheckEq implements EvcOp {
       if (vx is $Instance) {
         final method = vx.$getProperty(runtime, '==') as EvalFunction;
 
+        final rhs = v2 == null
+            ? null
+            : (v2 is $Value ? v2 : (runtime.wrapPrimitive(v2) ?? $Object(v2)));
+
         runtime.returnValue = method.call(runtime, vx, [
-          v2 == null ? null : v2 as $Value,
+          rhs,
         ])!.$value;
         runtime.args = [];
 
         return;
       }
 
-      runtime.returnValue = v1 == v2;
+      if ((v1 == null && v2 is $null) || (v2 == null && v1 is $null)) {
+        runtime.returnValue = true;
+      } else {
+        runtime.returnValue = v1 == v2;
+      }
       return;
     }
   }
