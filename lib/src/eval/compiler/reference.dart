@@ -629,12 +629,6 @@ class IndexedReference implements Reference {
           ? _variable.type.specifiedTypeArgs[0]
           : CoreTypes.dynamic.ref(ctx);
     }
-    // Resolve Map value type from type args without calling getValue().
-    // getValue() emits bytecode (Unbox + IndexMap) as a side effect.
-    // compileAssignmentExpression calls resolveType() twice for simple `=`
-    // assignments, which would emit Unbox twice on the same slot: the second
-    // Unbox crashes because frame[slot] is already a raw Map<$V,$V>, not
-    // a $Value.
     if (_variable.type.isAssignableTo(
       ctx,
       CoreTypes.map.ref(ctx),
@@ -693,9 +687,6 @@ class IndexedReference implements Reference {
 
       final map = _variable.unboxIfNeeded(ctx);
       if (_variable.type.specifiedTypeArgs.isEmpty) {
-        // Dynamic/untyped map: preserve the runtime representation of the key
-        // instead of forcing boxing. Forcing boxed keys here can cause misses
-        // when the backing map stores raw Dart keys (e.g. String).
         _index = _index.updated(ctx);
       } else {
         _index = _variable.type.specifiedTypeArgs[0].boxed
