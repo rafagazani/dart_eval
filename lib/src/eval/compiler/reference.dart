@@ -692,11 +692,16 @@ class IndexedReference implements Reference {
       }
 
       final map = _variable.unboxIfNeeded(ctx);
-      _index =
-          (_variable.type.specifiedTypeArgs.isEmpty ||
-              _variable.type.specifiedTypeArgs[0].boxed)
-          ? _index.boxIfNeeded(ctx, source)
-          : _index.unboxIfNeeded(ctx);
+      if (_variable.type.specifiedTypeArgs.isEmpty) {
+        // Dynamic/untyped map: preserve the runtime representation of the key
+        // instead of forcing boxing. Forcing boxed keys here can cause misses
+        // when the backing map stores raw Dart keys (e.g. String).
+        _index = _index.updated(ctx);
+      } else {
+        _index = _variable.type.specifiedTypeArgs[0].boxed
+            ? _index.boxIfNeeded(ctx, source)
+            : _index.unboxIfNeeded(ctx);
+      }
       ctx.pushOp(
         IndexMap.make(map.scopeFrameOffset, _index.scopeFrameOffset),
         IndexMap.LEN,
@@ -732,7 +737,11 @@ class IndexedReference implements Reference {
     _variable = _variable.updated(ctx);
     _index = _index.updated(ctx);
 
-    if (_variable.type.isAssignableTo(ctx, CoreTypes.list.ref(ctx))) {
+    if (_variable.type.isAssignableTo(
+      ctx,
+      CoreTypes.list.ref(ctx),
+      forceAllowDynamic: false,
+    )) {
       if (!_index.type.isAssignableTo(ctx, CoreTypes.int.ref(ctx))) {
         throw CompileError(
           'TypeError: Cannot use variable of type ${_index.type} as list index',
