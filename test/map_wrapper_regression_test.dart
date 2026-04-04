@@ -260,4 +260,60 @@ void main() {
       expect((value as dynamic).$value, 'One Piece Movie 01');
     },
   );
+
+  test(
+    'regression: map null-coalescing plus toString should compile in loop',
+    () {
+      final source = r'''
+      void main() {
+        dynamic rows = [
+          {'faixa_aging': null, 'valor_em_aberto': 10.0},
+          {'faixa_aging': '31-60', 'valor_em_aberto': 5.0},
+        ];
+
+        for (final row in rows) {
+          final faixa = (row['faixa_aging'] ?? 'N/A').toString();
+          print(faixa);
+        }
+      }
+      ''';
+
+      final runtime = Compiler().compileWriteAndLoad({
+        'example': {'main.dart': source},
+      });
+
+      expect(
+        () => runtime.executeLib('package:example/main.dart', 'main'),
+        prints('N/A\n31-60\n'),
+      );
+    },
+  );
+
+  test(
+    'regression: map numeric cast supports toDouble and toStringAsFixed',
+    () {
+      final source = r'''
+      void main() {
+        dynamic rows = [
+          {'valor_em_aberto': 12.3},
+          {'valor_em_aberto': null},
+        ];
+
+        for (final row in rows) {
+          final val = ((row['valor_em_aberto'] ?? 0) as num).toDouble();
+          print(val.toStringAsFixed(2));
+        }
+      }
+      ''';
+
+      final runtime = Compiler().compileWriteAndLoad({
+        'example': {'main.dart': source},
+      });
+
+      expect(
+        () => runtime.executeLib('package:example/main.dart', 'main'),
+        prints('12.30\n0.00\n'),
+      );
+    },
+  );
 }
