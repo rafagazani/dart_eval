@@ -316,4 +316,36 @@ void main() {
       );
     },
   );
+
+  test(
+    'regression: toStringAsFixed should work on arithmetic double expression',
+    () {
+      final source = r'''
+      void main() {
+        final rows = [
+          {'valor_total': 100.0, 'margem_bruta': 20.0},
+          {'valor_total': 0.0, 'margem_bruta': 1.0},
+        ];
+
+        for (final row in rows) {
+          final vt = ((row['valor_total'] ?? 0) as num).toDouble();
+          final mb = ((row['margem_bruta'] ?? 0) as num).toDouble();
+          final pct = vt > 0
+              ? (mb / vt * 100).toStringAsFixed(1) + '%'
+              : 'N/A';
+          print(pct);
+        }
+      }
+      ''';
+
+      final runtime = Compiler().compileWriteAndLoad({
+        'example': {'main.dart': source},
+      });
+
+      expect(
+        () => runtime.executeLib('package:example/main.dart', 'main'),
+        prints('20.0%\nN/A\n'),
+      );
+    },
+  );
 }
