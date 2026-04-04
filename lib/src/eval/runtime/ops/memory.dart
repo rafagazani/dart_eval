@@ -24,11 +24,13 @@ class PushArg implements EvcOp {
 class Pop implements EvcOp {
   Pop(Runtime runtime) : _amount = runtime._readUint8();
 
-  Pop.make(this._amount);
+  Pop.make(this._amount)
+    : assert(_amount >= 0),
+      assert(_amount <= 0xff);
 
   final int _amount;
 
-  static const int LEN = Evc.BASE_OPLEN;
+  static const int LEN = Evc.BASE_OPLEN + Evc.I8_LEN;
 
   @override
   void run(Runtime runtime) {
@@ -48,8 +50,7 @@ class PushReturnValue implements EvcOp {
 
   @override
   void run(Runtime runtime) {
-    final offset = runtime.frameOffset++;
-    runtime.frame[offset] = runtime.returnValue;
+    runtime._pushFrameValue(runtime.returnValue);
   }
 
   @override

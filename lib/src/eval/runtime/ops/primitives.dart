@@ -18,7 +18,7 @@ class PushConstant implements EvcOp {
   // Set value at position to constant
   @override
   void run(Runtime runtime) {
-    runtime.frame[runtime.frameOffset++] = runtime.constantPool[_const];
+    runtime._pushFrameValue(runtime.constantPool[_const]);
   }
 
   @override
@@ -39,7 +39,7 @@ class PushConstantInt implements EvcOp {
   // Set value at position to constant
   @override
   void run(Runtime exec) {
-    exec.frame[exec.frameOffset++] = _value;
+    exec._pushFrameValue(_value);
   }
 
   @override
@@ -60,7 +60,7 @@ class PushConstantDouble implements EvcOp {
   // Set value at position to constant
   @override
   void run(Runtime exec) {
-    exec.frame[exec.frameOffset++] = _value;
+    exec._pushFrameValue(_value);
   }
 
   @override
@@ -79,7 +79,7 @@ class PushNull implements EvcOp {
   // Set value at position to constant
   @override
   void run(Runtime runtime) {
-    runtime.frame[runtime.frameOffset++] = null;
+    runtime._pushFrameValue(null);
   }
 
   @override
@@ -102,8 +102,9 @@ class NumAdd implements EvcOp {
 
   @override
   void run(Runtime runtime) {
-    runtime.frame[runtime.frameOffset++] =
-        (runtime.frame[_location1] as num) + (runtime.frame[_location2] as num);
+    runtime._pushFrameValue(
+      (runtime.frame[_location1] as num) + (runtime.frame[_location2] as num),
+    );
   }
 
   @override
@@ -126,8 +127,9 @@ class NumSub implements EvcOp {
 
   @override
   void run(Runtime runtime) {
-    runtime.frame[runtime.frameOffset++] =
-        (runtime.frame[_location1] as num) - (runtime.frame[_location2] as num);
+    runtime._pushFrameValue(
+      (runtime.frame[_location1] as num) - (runtime.frame[_location2] as num),
+    );
   }
 
   @override
@@ -151,8 +153,9 @@ class NumLt implements EvcOp {
 
   @override
   void run(Runtime runtime) {
-    runtime.frame[runtime.frameOffset++] =
-        (runtime.frame[_location1] as num) < (runtime.frame[_location2] as num);
+    runtime._pushFrameValue(
+      (runtime.frame[_location1] as num) < (runtime.frame[_location2] as num),
+    );
   }
 
   @override
@@ -176,9 +179,10 @@ class NumLtEq implements EvcOp {
 
   @override
   void run(Runtime runtime) {
-    runtime.frame[runtime.frameOffset++] =
-        (runtime.frame[_location1] as num) <=
-        (runtime.frame[_location2] as num);
+    runtime._pushFrameValue(
+      (runtime.frame[_location1] as num) <=
+          (runtime.frame[_location2] as num),
+    );
   }
 
   @override
@@ -418,7 +422,7 @@ class PushList extends EvcOp {
 
   @override
   void run(Runtime runtime) {
-    runtime.frame[runtime.frameOffset++] = [];
+    runtime._pushFrameValue([]);
   }
 
   @override
@@ -466,8 +470,9 @@ class IndexList extends EvcOp {
 
   @override
   void run(Runtime runtime) {
-    runtime.frame[runtime.frameOffset++] =
-        (runtime.frame[_position] as List)[runtime.frame[_index] as int];
+    runtime._pushFrameValue(
+      (runtime.frame[_position] as List)[runtime.frame[_index] as int],
+    );
   }
 
   @override
@@ -514,8 +519,7 @@ class PushIterableLength extends EvcOp {
 
   @override
   void run(Runtime runtime) {
-    runtime.frame[runtime.frameOffset++] =
-        (runtime.frame[_position] as Iterable).length;
+    runtime._pushFrameValue((runtime.frame[_position] as Iterable).length);
   }
 
   @override
@@ -532,7 +536,7 @@ class PushMap extends EvcOp {
 
   @override
   void run(Runtime runtime) {
-    runtime.frame[runtime.frameOffset++] = <Object?, Object?>{};
+    runtime._pushFrameValue(<Object?, Object?>{});
   }
 
   @override
@@ -584,7 +588,7 @@ class IndexMap extends EvcOp {
   @override
   void run(Runtime runtime) {
     final frame = runtime.frame;
-    frame[runtime.frameOffset++] = (frame[_map] as Map)[frame[_index]];
+    runtime._pushFrameValue((frame[_map] as Map)[frame[_index]]);
   }
 
   @override
@@ -601,7 +605,7 @@ class PushSet extends EvcOp {
 
   @override
   void run(Runtime runtime) {
-    runtime.frame[runtime.frameOffset++] = <Object?>{};
+    runtime._pushFrameValue(<Object?>{});
   }
 
   @override
@@ -644,8 +648,7 @@ class PushTrue extends EvcOp {
 
   @override
   void run(Runtime runtime) {
-    final frame = runtime.frame;
-    frame[runtime.frameOffset++] = true;
+    runtime._pushFrameValue(true);
   }
 
   @override
@@ -666,7 +669,7 @@ class LogicalNot extends EvcOp {
   @override
   void run(Runtime runtime) {
     final frame = runtime.frame;
-    frame[runtime.frameOffset++] = !(frame[_index] as bool);
+    runtime._pushFrameValue(!(frame[_index] as bool));
   }
 
   @override
@@ -714,11 +717,11 @@ class PushRecord implements EvcOp {
 
   @override
   void run(Runtime runtime) {
-    runtime.frame[runtime.frameOffset++] = $Record(
+    runtime._pushFrameValue($Record(
       (runtime.frame[_fields] as List).cast(),
       (runtime.constantPool[_const] as Map).cast(),
       _type,
-    );
+    ));
   }
 
   @override

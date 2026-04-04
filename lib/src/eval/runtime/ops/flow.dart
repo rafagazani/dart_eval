@@ -42,7 +42,11 @@ class PushScope implements EvcOp {
 
   @override
   void run(Runtime runtime) {
-    final frame = List<Object?>.filled(255, null);
+    final frame = List<Object?>.filled(
+      max(Runtime._initialFrameCapacity, runtime.args.length),
+      null,
+      growable: true,
+    );
     runtime.stack.add(frame);
     runtime.scopeNameStack.add(frName);
     runtime.frame = frame;
@@ -70,7 +74,7 @@ class PushCaptureScope implements EvcOp {
 
   @override
   void run(Runtime exec) {
-    exec.frame[exec.frameOffset++] = exec.stack[exec.stack.length - 2];
+    exec._pushFrameValue(exec.stack[exec.stack.length - 2]);
   }
 
   @override
@@ -324,14 +328,14 @@ class PushFunctionPtr implements EvcOp {
       for (final json in snAT) RuntimeType.fromJson(json),
     ];
 
-    runtime.frame[runtime.frameOffset++] = EvalFunctionPtr(
+    runtime._pushFrameValue(EvalFunctionPtr(
       runtime.frame,
       _offset,
       args[0] as int,
       posArgTypes,
       (runtime.constantPool[args[2] as int] as List).cast(),
       sortedNamedArgTypes,
-    );
+    ));
 
     runtime.args = [];
   }
@@ -359,7 +363,7 @@ class PushFunctionPtrCopyCapture implements EvcOp {
       for (final json in snAT) RuntimeType.fromJson(json),
     ];
 
-    runtime.frame[runtime.frameOffset++] = EvalFunctionPtr(
+    runtime._pushFrameValue(EvalFunctionPtr(
       // Copy the captured frame here. For closures in loops, this ensures that each closure
       // gets its own copy of the captured variables, rather than all closures sharing
       // the same captured frame which changes over time.
@@ -369,7 +373,7 @@ class PushFunctionPtrCopyCapture implements EvcOp {
       posArgTypes,
       (runtime.constantPool[args[2] as int] as List).cast(),
       sortedNamedArgTypes,
-    );
+    ));
 
     runtime.args = [];
   }

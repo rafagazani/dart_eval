@@ -40,7 +40,7 @@ class BridgeInstantiate implements EvcOp {
       $subclass ?? BridgeDelegatingShim(),
     );
 
-    runtime.frame[runtime.frameOffset++] = instance;
+    runtime._pushFrameValue(instance);
   }
 
   @override
@@ -57,7 +57,7 @@ class PushBridgeSuperShim extends EvcOp {
 
   @override
   void run(Runtime runtime) {
-    runtime.frame[runtime.frameOffset++] = BridgeSuperShim();
+    runtime._pushFrameValue(BridgeSuperShim());
   }
 
   @override

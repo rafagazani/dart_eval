@@ -222,7 +222,7 @@ class CreateClass implements EvcOp {
     final $cls = runtime.declaredClasses[_library]![_name]!;
 
     final instance = $InstanceImpl($cls, $super, List.filled(_valuesLen, null));
-    runtime.frame[runtime.frameOffset++] = instance;
+    runtime._pushFrameValue(instance);
   }
 
   @override
@@ -337,7 +337,7 @@ class PushObjectPropertyImpl implements EvcOp {
   @override
   void run(Runtime runtime) {
     final object = runtime.frame[objectOffset] as $InstanceImpl;
-    runtime.frame[runtime.frameOffset++] = object.values[_propertyIndex];
+    runtime._pushFrameValue(object.values[_propertyIndex]);
   }
 
   @override
@@ -388,11 +388,11 @@ class PushSuper implements EvcOp {
   void run(Runtime runtime) {
     final object = runtime.frame[_objectOffset] as $Instance;
     if (object is $InstanceImpl) {
-      runtime.frame[runtime.frameOffset++] = object.evalSuperclass;
+      runtime._pushFrameValue(object.evalSuperclass);
     } else if (object is $Bridge) {
-      runtime.frame[runtime.frameOffset++] =
-          (Runtime.bridgeData[object]!.subclass as $InstanceImpl)
-              .evalSuperclass!;
+      runtime._pushFrameValue(
+        (Runtime.bridgeData[object]!.subclass as $InstanceImpl).evalSuperclass!,
+      );
     } else {
       throw UnimplementedError();
     }
@@ -422,12 +422,12 @@ class IsType implements EvcOp {
     final type = value.$getRuntimeType(runtime);
     if (type < 0) {
       final result = type == _type;
-      runtime.frame[runtime.frameOffset++] = _not ? !result : result;
+      runtime._pushFrameValue(_not ? !result : result);
       return;
     }
     final typeSet = runtime.typeTypes[type];
     final result = typeSet.contains(_type);
-    runtime.frame[runtime.frameOffset++] = _not ? !result : result;
+    runtime._pushFrameValue(_not ? !result : result);
   }
 
   @override
@@ -446,9 +446,7 @@ class PushRuntimeType implements EvcOp {
   @override
   void run(Runtime runtime) {
     final value = runtime.frame[_value] as $Value;
-    runtime.frame[runtime.frameOffset++] = $TypeImpl(
-      value.$getRuntimeType(runtime),
-    );
+    runtime._pushFrameValue($TypeImpl(value.$getRuntimeType(runtime)));
   }
 
   @override
@@ -466,7 +464,7 @@ class PushConstantType implements EvcOp {
 
   @override
   void run(Runtime runtime) {
-    runtime.frame[runtime.frameOffset++] = $TypeImpl(_typeId);
+    runtime._pushFrameValue($TypeImpl(_typeId));
   }
 
   @override

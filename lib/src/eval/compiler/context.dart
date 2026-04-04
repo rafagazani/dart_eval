@@ -74,8 +74,12 @@ mixin ScopeContext on Object implements AbstractScopeContext {
   }
 
   void popN(int pops) {
-    if (pops == 0) {
+    if (pops <= 0) {
       return;
+    }
+    while (pops > 0xff) {
+      pushOp(Pop.make(0xff), Pop.LEN);
+      pops -= 0xff;
     }
     pushOp(Pop.make(pops), Pop.LEN);
   }

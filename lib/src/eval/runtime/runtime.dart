@@ -89,6 +89,8 @@ class _UnloadedEnumValues {
 /// should check permissions using [checkPermission] or [assertPermission].
 ///
 class Runtime {
+  static const int _initialFrameCapacity = 255;
+
   /// The current runtime version code
   static const int versionCode = 81;
 
@@ -928,6 +930,18 @@ class Runtime {
         ? exception.exception
         : exception;
     _prOffset = catchOffset;
+  }
+
+  @pragma('vm:always-inline')
+  void _pushFrameValue(Object? value) {
+    if (frameOffset >= frame.length) {
+      final currentLen = frame.length;
+      final nextLen = currentLen <= 0
+          ? _initialFrameCapacity
+          : max(currentLen * 2, _initialFrameCapacity);
+      frame.length = nextLen;
+    }
+    frame[frameOffset++] = value;
   }
 
   @pragma('vm:always-inline')
